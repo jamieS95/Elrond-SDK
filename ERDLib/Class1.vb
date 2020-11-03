@@ -6,36 +6,52 @@ Imports Org.BouncyCastle.Crypto
 Imports Org.BouncyCastle.Crypto.Generators
 Imports Org.BouncyCastle.Crypto.Parameters
 Imports Org.BouncyCastle.Security
-
-public Class Elrond
-    'priv
-    Public PrivKeyRaw() As Byte
-    Public PrivKeyBech32 As String
-    'pub
-    Public PubKeyRaw() As Byte
-    Public PubKeyBech32 As String
-    'nonce
-    Public _nonce As UInt64
-    Public _balance As String
 #Const BOUNCY_CASTLE_CRYPTO = True
-
+Public Class Elrond
+    Private _PrivKeyRaw(32 - 1), _PubKeyRaw(32 - 1) As Byte
+    Private _PrivKeyBech32, _PubKeyBech32, _Balance As String
+    'nonce
+    Public _Nonce As UInt64
 
     Private Function GenKeysAndEncode()
 #If BOUNCY_CASTLE_CRYPTO Then
-        PubKeyRaw = ((New Ed25519PrivateKeyParameters(PrivKeyRaw, 0)).GeneratePublicKey()).GetEncoded()
+        _PubKeyRaw = ((New Ed25519PrivateKeyParameters(_PrivKeyRaw, 0)).GeneratePublicKey()).GetEncoded()
 #Else
-        PubKeyRaw = Ed25519.PublicKey(PrivKeyRaw)
+        _PubKeyRaw = Ed25519.PublicKey(PrivKeyRaw)
 #End If
-        PubKeyBech32 = Bech32.Bech32Engine2.Encode("erd", PubKeyRaw)
-        PrivKeyBech32 = Bech32.Bech32Engine2.Encode("erd", PrivKeyRaw)
+        _PubKeyBech32 = Bech32.Bech32Engine2.Encode("erd", _PubKeyRaw)
+        _PrivKeyBech32 = Bech32.Bech32Engine2.Encode("erd", _PrivKeyRaw)
     End Function
     Function showMatch(ByVal text As String, ByVal expr As String) As String
-        Console.WriteLine("The Expression: " + expr)
         Dim mc As MatchCollection = Regex.Matches(text, expr)
         Dim m As Match
-        Console.WriteLine(" : " + mc(0).Groups(1).Value)
         Return mc(0).Groups(1).Value
-
+    End Function
+    Public Sub SetPrivateKey(ByVal p() As Byte)
+        Buffer.BlockCopy(p, 0, _PrivKeyRaw, 0, 32)
+        GenKeysAndEncode()
+    End Sub
+    Public Function GetPrivateKey() As Byte()
+        Dim tmpPrivKeyRaw(32 - 1) As Byte
+        Buffer.BlockCopy(_PrivKeyRaw, 0, tmpPrivKeyRaw, 0, 32)
+        Return tmpPrivKeyRaw
+    End Function
+    Public Function GetPrivateKeyBech32() As String
+        Return _PrivKeyBech32
+    End Function
+    Public Function GetPublicKey() As Byte()
+        Dim tmpPubKeyRaw(32 - 1) As Byte
+        Buffer.BlockCopy(_PubKeyRaw, 0, tmpPubKeyRaw, 0, 32)
+        Return tmpPubKeyRaw
+    End Function
+    Public Function GetPublicKeyBech32() As String
+        Return _PubKeyBech32
+    End Function
+    Public Function GetNonce()
+        Return _Nonce
+    End Function
+    Public Function GetBalance()
+        Return _Balance
     End Function
     Public Sub FromJSONKeystore(ByVal f As String, ByVal password As String)
         Dim jsonstr As String = File.ReadAllText(f)
@@ -66,8 +82,7 @@ public Class Elrond
 #Else
 
 #End If
-        ReDim PrivKeyRaw(32 - 1)
-        Buffer.BlockCopy(plainBytes, 0, PrivKeyRaw, 0, 32)
+        Buffer.BlockCopy(plainBytes, 0, _PrivKeyRaw, 0, 32)
         GenKeysAndEncode()
     End Sub
     Public Shared Function StringToByteArray(s As String) As Byte()
@@ -92,28 +107,19 @@ public Class Elrond
     End Function
     Private Function Wraptext(ByVal str As String, ByVal len As Integer) As List(Of String)
         Dim strings As New List(Of String)
-
         For i As Integer = 0 To str.Length Step len
             strings.Add(str.Substring(i, System.Math.Min(str.Length - i, 64)))
         Next
         Return strings
     End Function
     Public Sub ToPEM(ByVal f As String, Optional name As String = "")
-        If String.IsNullOrEmpty(name) Then
-            name = PubKeyBech32
-        End If
-        Dim header = String.Format("-----BEGIN PRIVATE KEY for {0}-----", name)
-        Dim footer = String.Format("-----END PRIVATE KEY for {0}-----", name)
+        name = If(String.IsNullOrEmpty(name), _PubKeyBech32, name)
         Using sw As New StreamWriter(f)
-            Dim wrap As String()
-            Dim pubkeynew = System.Text.Encoding.ASCII.GetBytes(Bytes_To_String2(PrivKeyRaw).ToLower & Bytes_To_String2(PubKeyRaw).ToLower)
-
-            Dim base64str = Convert.ToBase64String(pubkeynew, 0, pubkeynew.Length)
-            wrap = Wraptext(base64str, 64).ToArray
-
-            sw.WriteLine(header)
+            Dim pubkeynew = System.Text.Encoding.ASCII.GetBytes(Bytes_To_String2(_PrivKeyRaw).ToLower & Bytes_To_String2(_PubKeyRaw).ToLower)
+            Dim wrap As String() = Wraptext(Convert.ToBase64String(pubkeynew, 0, pubkeynew.Length), 64).ToArray
+            sw.WriteLine(String.Format("-----BEGIN PRIVATE KEY for {0}-----", name))
             sw.WriteLine(String.Join(vbNewLine, wrap))
-            sw.WriteLine(footer)
+            sw.WriteLine(String.Format("-----END PRIVATE KEY for {0}-----", name))
         End Using
     End Sub
     Public Sub FromPEM(ByVal f As String)
@@ -134,30 +140,29 @@ public Class Elrond
         End Using
         FromPEMbase64(String.Join("", strings.ToArray))
     End Sub
-
     Private Sub FromPEMbase64(ByVal base64EncodedSeed As String)
         Dim vOut As String = System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(base64EncodedSeed))
         Dim newprivkey() As Byte = StringToByteArray(vOut.Substring(0, 64))
         Dim newpubkey() As Byte = StringToByteArray(vOut.Substring(64, 64))
-        PrivKeyRaw = newprivkey
+        _PrivKeyRaw = newprivkey
 
 
         GenKeysAndEncode()
-        If Byte.ReferenceEquals(PubKeyRaw, newpubkey) Then
+        If Byte.ReferenceEquals(_PubKeyRaw, newpubkey) Then
             Throw New Exception("pem error")
         End If
     End Sub
     Public Function UpdateBalanceAndNonce()
         Dim jsonstr = getnonceandbalance()
 
-        _balance = showMatch(jsonstr, """balance"":""([0-9]*)""")
-        _nonce = showMatch(jsonstr, """nonce"":([0-9]*)")
+        _Balance = showMatch(jsonstr, """balance"":""([0-9]*)""")
+        _Nonce = showMatch(jsonstr, """nonce"":([0-9]*)")
     End Function
     Private Function getnonceandbalance()
         Dim Req As HttpWebRequest
         'create a web request to the URL  
         Try
-            Req = HttpWebRequest.Create("https://api.elrond.com/address/" & PubKeyBech32)
+            Req = HttpWebRequest.Create("https://api.elrond.com/address/" & _PubKeyBech32)
             ' Req.
             Req.ContentType = "application/json-rpc"
             Req.Method = "GET"
@@ -191,13 +196,14 @@ public Class Elrond
         End Try
 
     End Function
+
     Public Function SignTX(_nonce, _value, _receiver, _gasPrice, _gasLimit, _data, _chainID, _version) As String
-        Dim txtosign As String = CreateTXstring(_nonce, _value, _receiver, PubKeyBech32, _gasPrice, _gasLimit, _data, _chainID, _version, "")
+        Dim txtosign As String = CreateTXstring(_nonce, _value, _receiver, _PubKeyBech32, _gasPrice, _gasLimit, _data, _chainID, _version, "")
         Dim messagebytestosign = System.Text.UTF8Encoding.ASCII.GetBytes(txtosign)
 
 
 #If BOUNCY_CASTLE_CRYPTO Then
-        Dim parameters As Ed25519PrivateKeyParameters = New Ed25519PrivateKeyParameters(PrivKeyRaw, 0)
+        Dim parameters As Ed25519PrivateKeyParameters = New Ed25519PrivateKeyParameters(_PrivKeyRaw, 0)
         Dim df As New Org.BouncyCastle.Crypto.Signers.Ed25519Signer
         df.Init(True, parameters)
         df.BlockUpdate(messagebytestosign, 0, messagebytestosign.Length)
@@ -207,7 +213,7 @@ public Class Elrond
 #End If
 
 
-        Dim signedtx As String = CreateTXstring(_nonce, _value, _receiver, PubKeyBech32, _gasPrice, _gasLimit, _data, _chainID, _version, Bytes_To_String2(signature))
+        Dim signedtx As String = CreateTXstring(_nonce, _value, _receiver, _PubKeyBech32, _gasPrice, _gasLimit, _data, _chainID, _version, Bytes_To_String2(signature))
         Return signedtx
     End Function
     Private Function Bytes_To_String2(ByVal bytes_Input As Byte()) As String
@@ -226,11 +232,12 @@ public Class Elrond
         sb.Append(String.Format("""sender"":""{0}"",", sender))
         sb.Append(String.Format("""gasPrice"":{0},", gasPrice))
         sb.Append(String.Format("""gasLimit"":{0},", gasLimit))
-        If data.Length > 2 Then 'don't add a data field if we dont supply data
-            sb.Append(String.Format("""data"":""{0}"",", data))
+        If String.IsNullOrEmpty(data) <> 0 Then 'don't add a data field if we dont supply data
+            Dim databytes() As Byte = System.Text.Encoding.ASCII.GetBytes(data)
+            sb.Append(String.Format("""data"":""{0}"",", Convert.ToBase64String(databytes, 0, databytes.Length)))
         End If
         sb.Append(String.Format("""chainID"":""{0}"",", chainID))
-        If signature.Length < 4 Then 'only allow signature field if we have signed the data
+        If String.IsNullOrEmpty(signature) Then 'only allow signature field if we have signed the data
             sb.Append(String.Format("""version"":{0}", version))
         Else
             sb.Append(String.Format("""version"":{0},", version))
@@ -238,5 +245,29 @@ public Class Elrond
         End If
         sb.Append("}")
         Return sb.ToString
+    End Function
+    'Public Function ClaimRewards() As String
+
+    'End Function
+    Public Function SendTransaction(ByVal receiver As String, ByVal value As String, Optional data As String = "") As String
+        Dim gasPrice As Integer = 1000000000
+        Dim gasLimit As Integer = 70000
+        Dim chainID As String = "1"
+        Dim version As Integer = 1
+
+        Dim txtosign As String = CreateTXstring(_Nonce, value, receiver, _PubKeyBech32, gasPrice, gasLimit, data, chainID, version, "")
+        Dim messagebytestosign = System.Text.UTF8Encoding.ASCII.GetBytes(txtosign)
+#If BOUNCY_CASTLE_CRYPTO Then
+        Dim parameters As Ed25519PrivateKeyParameters = New Ed25519PrivateKeyParameters(_PrivKeyRaw, 0)
+        Dim df As New Org.BouncyCastle.Crypto.Signers.Ed25519Signer
+        df.Init(True, parameters)
+        df.BlockUpdate(messagebytestosign, 0, messagebytestosign.Length)
+        Dim signature As Byte() = df.GenerateSignature()
+#Else
+        Dim signature As Byte() = Ed25519.Signature(messagebytestosign, PrivKeyRaw, PubKeyRaw)
+#End If
+        Dim signedtx As String = CreateTXstring(_Nonce, value, receiver, _PubKeyBech32, gasPrice, gasLimit, data, chainID, version, Bytes_To_String2(signature))
+        _Nonce += 1
+        Return SendTX(signedtx)
     End Function
 End Class
