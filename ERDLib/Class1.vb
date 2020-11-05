@@ -232,7 +232,7 @@ Public Class Elrond
         sb.Append(String.Format("""sender"":""{0}"",", sender))
         sb.Append(String.Format("""gasPrice"":{0},", gasPrice))
         sb.Append(String.Format("""gasLimit"":{0},", gasLimit))
-        If String.IsNullOrEmpty(data) <> 0 Then 'don't add a data field if we dont supply data
+        If String.IsNullOrEmpty(data) = False Then 'don't add a data field if we dont supply data
             Dim databytes() As Byte = System.Text.Encoding.ASCII.GetBytes(data)
             sb.Append(String.Format("""data"":""{0}"",", Convert.ToBase64String(databytes, 0, databytes.Length)))
         End If

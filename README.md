@@ -24,4 +24,5 @@
     a._balance
 
     a.SignTX(a._nonce, TextBox2.Text, TextBox3.Text, gasPrice, gasLimit, data, chainID, version)
+	a.SendTransaction(ByVal receiver As String, ByVal value As String, Optional data As String = "")
     a.SendTX()
