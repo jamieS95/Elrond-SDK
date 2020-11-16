@@ -20,9 +20,9 @@ Namespace Bech32
 		End Function
 		Public Sub Decode(encoded As String, <System.Runtime.InteropServices.OutAttribute()> ByRef hrp As String, <System.Runtime.InteropServices.OutAttribute()> ByRef data As Byte())
 			Dim squashed As Byte()
-#Disable Warning BC42030 ' Variable is passed by reference before it has been assigned a value
+'#Disable Warning BC42030 ' Variable is passed by reference before it has been assigned a value
 			DecodeSquashed(encoded, hrp, squashed)
-#Enable Warning BC42030 ' Variable is passed by reference before it has been assigned a value
+'#Enable Warning BC42030 ' Variable is passed by reference before it has been assigned a value
 			If squashed Is Nothing Then
 				data = Nothing
 			Else

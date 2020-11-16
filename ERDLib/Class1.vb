@@ -2,6 +2,7 @@
 Imports System.Net
 Imports System.Text
 Imports System.Text.RegularExpressions
+Imports System.Collections.Generic
 Imports Org.BouncyCastle.Crypto
 Imports Org.BouncyCastle.Crypto.Generators
 Imports Org.BouncyCastle.Crypto.Parameters
