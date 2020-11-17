@@ -36,7 +36,7 @@ Public Class Form1
                 a.FromJSONKeystore(ofd1.FileName, password)
                 TextBox1.Text = a.GetPublicKeyBech32()
                 a.UpdateBalanceAndNonce()
-                Label6.Text = CDbl((BigInteger.Parse(a.GetBalance()) * BigInteger.Pow(10, 18))).ToString.Substring(0, 15)
+                Label6.Text = a.GetBalance()
                 Label9.Text = a._Nonce
             End If
         Else
