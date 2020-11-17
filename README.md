@@ -2,6 +2,14 @@
  .net sdk for elrond with example projects
 
 
+- [ ] change transaction amount handling to big decimal or similar
+- [ ] better function responses e.g return transaction information after send
+- [ ] allow user defined fee/get recommended fee from api
+- [ ] convert to C with .NET bindings (speed improvement)
+
+
+
+
 ![Alt text](https://raw.githubusercontent.com/jamieS95/Elrond-SDK/main/screenshots/simplesend.png )
 ![Alt text](https://raw.githubusercontent.com/jamieS95/Elrond-SDK/main/screenshots/walletconverter.png)
 
