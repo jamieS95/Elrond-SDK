@@ -7,20 +7,27 @@
 
 
 
-
-    Imports ERDLib
+ 
     using ERDLib;
 	
-	
-    Dim a As New Elrond
     Elrond a = new Elrond;
-
-
+    
+    a.FromPEM(String filelocation);
+    a.FromJSONKeystore(String filelocation,String password);
+	
+    a.ToPEM(String filelocation);
+	
+	a.SendTransaction(String receiver,String value,String data = "");
+	
+	
+	
+    Imports ERDLib
+	
+	Dim a As New Elrond
+	
     a.FromPEM(filelocation)
     a.FromJSONKeystore(filelocation, password)
 	
     a.ToPEM(filelocation)
 	
-	
-    
-	a.SendTransaction(ByVal receiver As String, ByVal value As String, Optional data As String = "") 
+	a.SendTransaction(ByVal receiver As String, ByVal value As String, Optional data As String = "") 	
