@@ -51,10 +51,10 @@ Public Class Elrond
     Public Function GetNonce()
         Return _Nonce
     End Function
-    Public Function GetBalanceRaw()
+    Public Function GetBalanceRaw() As String
         Return _BalanceRaw
     End Function
-    Public Function GetBalance()
+    Public Function GetBalance() As String
         Return _BalanceRaw.Substring(0, _BalanceRaw.Length - 18) & "." & _BalanceRaw.Substring(_BalanceRaw.Length - 18, 18)
     End Function
 
