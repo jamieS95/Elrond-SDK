@@ -10,7 +10,7 @@ Imports Org.BouncyCastle.Security
 #Const BOUNCY_CASTLE_CRYPTO = True
 Public Class Elrond
     Private _PrivKeyRaw(32 - 1), _PubKeyRaw(32 - 1) As Byte
-    Private _PrivKeyBech32, _PubKeyBech32, _Balance As String
+    Private _PrivKeyBech32, _PubKeyBech32, _BalanceRaw As String
     'nonce
     Public _Nonce As UInt64
 
@@ -51,9 +51,13 @@ Public Class Elrond
     Public Function GetNonce()
         Return _Nonce
     End Function
-    Public Function GetBalance()
-        Return _Balance
+    Public Function GetBalanceRaw()
+        Return _BalanceRaw
     End Function
+    Public Function GetBalance()
+        Return _BalanceRaw.Substring(0, _BalanceRaw.Length - 18) & "." & _BalanceRaw.Substring(_BalanceRaw.Length - 18, 18)
+    End Function
+
     Public Sub FromJSONKeystore(ByVal f As String, ByVal password As String)
         Dim jsonstr As String = File.ReadAllText(f)
 
@@ -156,7 +160,7 @@ Public Class Elrond
     Public Function UpdateBalanceAndNonce()
         Dim jsonstr = getnonceandbalance()
 
-        _Balance = showMatch(jsonstr, """balance"":""([0-9]*)""")
+        _BalanceRaw = showMatch(jsonstr, """balance"":""([0-9]*)""")
         _Nonce = showMatch(jsonstr, """nonce"":([0-9]*)")
     End Function
     Private Function getnonceandbalance()

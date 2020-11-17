@@ -27,33 +27,32 @@ Public Class Form1
 
     End Function
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        Try
-            Dim ofd1 As New OpenFileDialog
-            If RadioButton1.Checked Then
-                ofd1.Filter = "JSON|*.json"
-                Dim password As String = InputBox("please type json password", "JSON password", "")
-                If ofd1.ShowDialog = DialogResult.OK Then
-                    a.FromJSONKeystore(ofd1.FileName, password)
-                    TextBox1.Text = a.GetPublicKeyBech32()
-                    a.UpdateBalanceAndNonce()
-                    Label6.Text = CDbl((BigInteger.Parse(a.GetBalance()) * BigInteger.Pow(10, 18))).ToString.Substring(0, 15)
-                    Label9.Text = a._Nonce
-                End If
-            Else
-                ofd1.Filter = "pem|*.PEM"
-                If ofd1.ShowDialog = DialogResult.OK Then
-                    a.FromPEM(ofd1.FileName)
-                    TextBox1.Text = a.GetPublicKeyBech32()
-                    a.UpdateBalanceAndNonce()
-                    Label6.Text = CDbl((BigInteger.Parse(a.GetBalance()) * BigInteger.Pow(10, 18))).ToString.Substring(0, 15)
-                    Label9.Text = a._Nonce
-                End If
+        '  Try
+        Dim ofd1 As New OpenFileDialog
+        If RadioButton1.Checked Then
+            ofd1.Filter = "JSON|*.json"
+            Dim password As String = InputBox("please type json password", "JSON password", "")
+            If ofd1.ShowDialog = DialogResult.OK Then
+                a.FromJSONKeystore(ofd1.FileName, password)
+                TextBox1.Text = a.GetPublicKeyBech32()
+                a.UpdateBalanceAndNonce()
+                Label6.Text = CDbl((BigInteger.Parse(a.GetBalance()) * BigInteger.Pow(10, 18))).ToString.Substring(0, 15)
+                Label9.Text = a._Nonce
             End If
-        Catch ex As Exception
+        Else
+            ofd1.Filter = "pem|*.PEM"
+            If ofd1.ShowDialog = DialogResult.OK Then
+                a.FromPEM(ofd1.FileName)
+                TextBox1.Text = a.GetPublicKeyBech32()
+                a.UpdateBalanceAndNonce()
+                Label6.Text = a.GetBalance()
+                Label9.Text = a._Nonce
+            End If
+        End If
+        '  Catch ex As Exception
 
-        End Try
+        'End Try
     End Sub
-
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
         a.SendTransaction(TextBox3.Text, TextBox2.Text)
     End Sub
